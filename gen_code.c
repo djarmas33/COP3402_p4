@@ -66,10 +66,13 @@ void gen_code_output_program(BOFFILE bf, code_seq main_cs) {
 
 // Generate code for the main program
 void gen_code_program(BOFFILE bf, block_t prog) {
-	fprintf(stderr, "The type tag is %d", prog.type_tag);
+
+	fprintf(stderr, "	The type tag is %d", prog.type_tag);
+
 	// Initialize the main code sequence with variable declarations
 	code_seq main_cs = gen_code_var_decls(prog.var_decls);
-	fprintf(stderr, "Returned from the var decls\n");
+	fprintf(stderr, "	Returned from the var decls\n");
+
 	// Calculate stack space in bytes based on the size of the code sequence
 	int vars_len_in_bytes = (code_seq_size(main_cs) / 2) * BYTES_PER_WORD;
 
@@ -77,8 +80,8 @@ void gen_code_program(BOFFILE bf, block_t prog) {
 	code_seq_concat(&main_cs, code_utils_allocate_stack_space(vars_len_in_bytes));
 
 	code_seq_concat(&main_cs, code_utils_set_up_program());
-	fprintf(stderr, "Going into making our first block stmt\n");
-	fprintf(stderr, "Attempting to not crash\n");
+	fprintf(stderr, "	Going into making our first block stmt\n");
+	fprintf(stderr, "	Attempting to not crash\n");
 	// stmt_t *sp = prog.stmts.stmt_list.start;
 
 	// while (sp != NULL) {
@@ -87,7 +90,7 @@ void gen_code_program(BOFFILE bf, block_t prog) {
 	// }
 	// I think we need to gen all stmts
 	code_seq_concat(&main_cs, gen_code_stmts(prog.stmts));
-	fprintf(stderr, "Back in gen_code_program from gen_code_block_stmt\n");
+	fprintf(stderr, "	Back in gen_code_program from gen_code_block_stmt\n");
 
 	// Deallocate stack space for variables
 	code_seq_concat(&main_cs, code_utils_deallocate_stack_space(vars_len_in_bytes));
@@ -100,7 +103,7 @@ void gen_code_program(BOFFILE bf, block_t prog) {
 
 // Not needed in hw4
 code_seq gen_code_proc_decls(proc_decls_t pds) {
-	fprintf(stderr, "Function gen_code_proc_decls not implemented!\n");
+	fprintf(stderr, "	Function gen_code_proc_decls not implemented!\n");
 	code_seq res = code_seq_empty();
 	return res;
 }
@@ -150,7 +153,7 @@ code_seq gen_code_var_decl(var_decl_t vd) {
 }
 
 code_seq gen_code_idents(ident_list_t idents, AST_type type) {
-	fprintf(stderr, "In gen_code_idents\n");
+	fprintf(stderr, "	In gen_code_idents\n");
 	code_seq ret = code_seq_empty();
 	ident_t* id = idents.start;
 	code_seq new = code_seq_empty();
@@ -159,12 +162,12 @@ code_seq gen_code_idents(ident_list_t idents, AST_type type) {
 		//fprintf(stderr, "RAHHHHHHH %d\n", type);  // type gives 6
 		switch (type) {
 			case var_decl_ast:
-				fprintf(stderr, "Making a New Variable\n");
+				fprintf(stderr, "	Making a New Variable\n");
 				//offset_type offset = literal_table_lookup(id->name, 0);  // Initialize the value to 0
 				code_seq_add_to_end(&new, code_swr(SP, 0, 0));
 				break;
 			default:
-				fprintf(stderr, "Have not implemented the case for %d in gen_code_idents", type);
+				fprintf(stderr, "	Have not implemented the case for %d in gen_code_idents", type);
 		}
 		code_seq_concat(&new, ret);
 		id = id->next;
@@ -176,18 +179,25 @@ code_seq gen_code_idents(ident_list_t idents, AST_type type) {
 // Generate code for the list of statements
 code_seq gen_code_stmts(stmts_t stmts)
 {
-	fprintf(stderr, "MAKING STATEMENTS\n");
+
+	fprintf(stderr, "	MAKING STATEMENTS %d\n", stmts.stmt_list.start);
+
+	if (stmts.stmts_kind == empty_stmts_e) {
+		return code_seq_empty();
+	}
+
+
 	if (stmts.stmt_list.start->stmt_kind == NULL) {
-		fprintf(stderr, "No statements to process.\n");
+		fprintf(stderr, "	No statements to process.\n");
 		return code_seq_empty();
 	}
 	else {
-		fprintf(stderr, "we have statements to process\n");
+		fprintf(stderr, "	we have statements to process\n");
 	}
 
 	code_seq ret = code_seq_empty();
 	stmt_t* sp = stmts.stmt_list.start;
-	fprintf(stderr, "we dont make it here\n");
+	fprintf(stderr, "	we dont make it here\n");
 
 	while (sp != NULL) {
 		code_seq stmt_code = gen_code_stmt(*sp);
@@ -203,31 +213,31 @@ code_seq gen_code_stmt(stmt_t stmt)
 {
 	// fprintf(stderr, "MAKING A NEW STATEMENT\n");
 	if (stmt.stmt_kind == NULL) {
-		fprintf(stderr, "UHOH EMPTY\n");
+		fprintf(stderr, "	UHOH EMPTY\n");
 		return code_seq_empty();
 	}
 	switch (stmt.stmt_kind) {
 		case assign_stmt:
-			fprintf(stderr, "going to call assign_stmt\n");
+			fprintf(stderr, "	going to call assign_stmt\n");
 			return gen_code_assign_stmt(stmt.data.assign_stmt);
 			// Not used in HW4
 		case call_stmt:
-			fprintf(stderr, "going to call call_stmt\n");
+			fprintf(stderr, "	going to call call_stmt\n");
 			return gen_code_call_stmt(stmt.data.call_stmt);
 		case if_stmt:
-			fprintf(stderr, "going to call if_stmt\n");
+			fprintf(stderr, "	going to call if_stmt\n");
 			return gen_code_if_stmt(stmt.data.if_stmt);
 		case while_stmt:
-			fprintf(stderr, "going to call while_stmt\n");
+			fprintf(stderr, "	going to call while_stmt\n");
 			return gen_code_while_stmt(stmt.data.while_stmt);
 		case read_stmt:
-			fprintf(stderr, "going to call read_stmt\n");
+			fprintf(stderr, "	going to call read_stmt\n");
 			return gen_code_read_stmt(stmt.data.read_stmt);
 		case print_stmt:
-			fprintf(stderr, "going to call print_stmt\n");
+			fprintf(stderr, "	going to call print_stmt\n");
 			return gen_code_print_stmt(stmt.data.print_stmt);
 		case block_stmt:
-			fprintf(stderr, "going to call block_stmt\n");
+			fprintf(stderr, "	going to call block_stmt\n");
 			return gen_code_block_stmt(stmt.data.block_stmt);
 		default:
 			bail_with_error("Call to gen_code_stmt with an AST that is not a statement!");
@@ -240,20 +250,20 @@ code_seq gen_code_stmt(stmt_t stmt)
 // Does not need to be implemented in hw4
 code_seq gen_code_call_stmt(call_stmt_t stmt) {
 	code_seq ret = code_seq_empty();
-	fprintf(stderr, "Function gen_code_call_stmt not implemented\n");
+	fprintf(stderr, "	Function gen_code_call_stmt not implemented\n");
 	return ret;
 }
 
 // Does not need to be implemented in hw4
 code_seq gen_code_read_stmt(read_stmt_t stmt) {
 	code_seq ret = code_seq_empty();
-	fprintf(stderr, "Function gen_code_read_stmt not implemented\n");
+	fprintf(stderr, "	Function gen_code_read_stmt not implemented\n");
 	return ret;
 }
 
 code_seq gen_code_while_stmt(while_stmt_t stmt) {
 	code_seq ret = code_seq_empty();
-	fprintf(stderr, "Function gen_code_while_stmt not implemented\n");
+	fprintf(stderr, "	Function gen_code_while_stmt not implemented\n");
 	return ret;
 }
 
@@ -283,7 +293,7 @@ code_seq gen_code_print_stmt(print_stmt_t stmt) {
 
 // Generate code for an assignment statement
 code_seq gen_code_assign_stmt(assign_stmt_t stmt) {
-	fprintf(stderr, "Handling assignment statement for variable: %s\n", stmt.name);
+	fprintf(stderr, "	Handling assignment statement for variable: %s\n", stmt.name);
 	// Generate code for the RHS expression
 	code_seq rhs_code = gen_code_expr(*stmt.expr);
 
@@ -299,8 +309,8 @@ code_seq gen_code_assign_stmt(assign_stmt_t stmt) {
 // Generate code for an if statement
 code_seq gen_code_if_stmt(if_stmt_t stmt) {
 	code_seq ret = code_seq_empty();
-	fprintf(stderr, "In gen_code_if_stmt\n");
-	fprintf(stderr, "The type of this statement is %d", stmt.type_tag);
+	fprintf(stderr, "	In gen_code_if_stmt\n");
+	fprintf(stderr, "	The type of this statement is %d", stmt.type_tag);
 	//code_seq_concat(&ret, );
 	code_seq then_block = gen_code_stmts(*stmt.then_stmts);
 	int then_block_size = code_seq_size(then_block);
@@ -310,7 +320,7 @@ code_seq gen_code_if_stmt(if_stmt_t stmt) {
 
 
 code_seq gen_code_block_stmt(block_stmt_t stmt) {
-	fprintf(stderr, "HANDLING A BLOCK STMT\n");
+	fprintf(stderr, "	HANDLING A BLOCK STMT\n");
 	code_seq ret = code_utils_copy_regs(3, FP);
 	code_seq vars = gen_code_var_decls(stmt.block->var_decls);
 	int vars_len_in_bytes = (code_seq_size(vars) / 2) * BYTES_PER_WORD;
@@ -324,7 +334,7 @@ code_seq gen_code_block_stmt(block_stmt_t stmt) {
 	code_seq_concat(&ret, gen_code_stmts(stmt.block->stmts));
 	code_seq_concat(&ret, code_utils_restore_registers_from_AR());
 	code_seq_concat(&ret, code_utils_deallocate_stack_space(vars_len_in_bytes));
-	fprintf(stderr, "RETURNING FROM THE BLOCK STMT\n");
+	fprintf(stderr, "	RETURNING FROM THE BLOCK STMT\n");
 	return ret;
 }
 
@@ -350,13 +360,13 @@ code_seq gen_code_expr(expr_t exp)
 
 code_seq gen_code_arith_op(token_t op) {
 	code_seq res = code_seq_empty();
-	fprintf(stderr, "Function gen_code_arith_op not implemented\n");
+	fprintf(stderr, "	Function gen_code_arith_op not implemented\n");
 	return res;
 }
 
 code_seq gen_code_rel_op(token_t op, expr_kind_e exp_type) {
 	code_seq res = code_seq_empty();
-	fprintf(stderr, "Function gen_code_rel_op not implemented\n");
+	fprintf(stderr, "	Function gen_code_rel_op not implemented\n");
 	return res;
 }
 
@@ -367,7 +377,7 @@ code_seq gen_code_rel_op(token_t op, expr_kind_e exp_type) {
 // Modifies SP when executed
 code* gen_code_op(token_t op, expr_kind_e exp_type)
 {
-	fprintf(stderr, "MAKING AN OP\n");
+	fprintf(stderr, "	MAKING AN OP\n");
 	switch (op.code) {
 		case eqsym:
 		case neqsym:
@@ -375,7 +385,7 @@ code* gen_code_op(token_t op, expr_kind_e exp_type)
 		case leqsym:
 		case gtsym:
 		case geqsym:
-			fprintf(stderr, "THE REL OPS ARENT IMPLEMENTED\n");
+			fprintf(stderr, "	THE REL OPS ARENT IMPLEMENTED\n");
 		case plussym:
 			return code_add(SP, 1, SP, 1);
 		case minussym:
@@ -388,13 +398,13 @@ code* gen_code_op(token_t op, expr_kind_e exp_type)
 			bail_with_error("Unknown token code (%d) in gen_code_op", op.code);
 			break;
 	}
-	fprintf(stderr, "Function gen_code_op not implemented\n");
+	fprintf(stderr, "	Function gen_code_op not implemented\n");
 
 	return NULL;
 }
 
 code_seq gen_code_binary_op_expr(binary_op_expr_t expr) {
-	fprintf(stderr, "MAKING A BINARY OP EXPR\n");
+	fprintf(stderr, "	MAKING A BINARY OP EXPR\n");
 	// Generate code for both operands
 	code_seq ret = gen_code_expr(*expr.expr1);
 	code_seq right_code = gen_code_expr(*expr.expr2);
@@ -427,7 +437,7 @@ code_seq gen_code_ident(ident_t expr) {
 
 
 code_seq gen_code_number(number_t expr) {
-	fprintf(stderr, "MAKING A NUMBER\n");
+	fprintf(stderr, "	MAKING A NUMBER\n");
 	// Lookup or add the number to the literal table
 	offset_type offset = literal_table_lookup(expr.text, expr.value);
 
@@ -438,7 +448,7 @@ code_seq gen_code_number(number_t expr) {
 }
 
 code_seq gen_code_logical_not_expr(negated_expr_t expr) {
-	fprintf(stderr, "Function gen_code_logical_not_expr might not be implemented properly\n");
+	fprintf(stderr, "	Function gen_code_logical_not_expr might not be implemented properly\n");
 	code_seq inner_code = gen_code_expr(*expr.expr); // Evaluate inner expression
 	code* not_instruction = code_notr(); // Apply NOT to the top of the stack
 	code_seq_concat(&inner_code, code_seq_singleton(not_instruction));
