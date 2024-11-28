@@ -319,7 +319,7 @@ code_seq gen_code_if_stmt(if_stmt_t stmt) {
 	code_seq else_block = gen_code_stmts(*stmt.else_stmts);
 	*/
 
-	return code_seq_empty();
+	//return code_seq_empty();
 
 	code_seq ret = code_seq_empty();
 
@@ -425,16 +425,16 @@ code_seq gen_code_if_stmt(if_stmt_t stmt) {
 	}
 
 	// concat condition and else
-	code_seq_concat(&cond, else_block);
+	//code_seq_concat(&cond, else_block);
 
 	// concat with branch that skips then
-	code_seq_concat(&cond, code_seq_singleton(code_jrel(then_block_size)));
+	//code_seq_concat(&cond, code_seq_singleton(code_jrel(then_block_size)));
 
-	// concat with then
-	code_seq_concat(&cond, then_block);
+	// concat with thens
+	code_seq_concat(&ret, then_block);
 
 	//return
-	code_seq_concat(&ret, cond);
+	//code_seq_concat(&ret, cond);
 
 	return ret;
 }
