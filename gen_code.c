@@ -147,10 +147,12 @@ code_seq gen_code_const_decl(const_decl_t cd) {
 	return ret;
 }
 
+
 // Generate code for a single variable declaration
 code_seq gen_code_var_decl(var_decl_t vd) {
 	return gen_code_idents(vd.ident_list, vd.type_tag);
 }
+
 
 code_seq gen_code_idents(ident_list_t idents, AST_type type) {
 	fprintf(stderr, "	In gen_code_idents\n");
@@ -308,13 +310,132 @@ code_seq gen_code_assign_stmt(assign_stmt_t stmt) {
 
 // Generate code for an if statement
 code_seq gen_code_if_stmt(if_stmt_t stmt) {
-	code_seq ret = code_seq_empty();
+	/*code_seq ret = code_seq_empty();
 	fprintf(stderr, "	In gen_code_if_stmt\n");
 	fprintf(stderr, "	The type of this statement is %d", stmt.type_tag);
 	//code_seq_concat(&ret, );
 	code_seq then_block = gen_code_stmts(*stmt.then_stmts);
 	int then_block_size = code_seq_size(then_block);
 	code_seq else_block = gen_code_stmts(*stmt.else_stmts);
+	*/
+
+	return code_seq_empty();
+
+	code_seq ret = code_seq_empty();
+
+	fprintf(stderr, "	In gen_code_if_stmt\n");
+	//fprintf(stderr, "	The type of this statement is %d\n", stmt.type_tag);
+
+	code_seq cond = code_seq_empty();
+	code_seq_concat(&cond, gen_code_expr(stmt.condition.data.rel_op_cond.expr1));
+	code_seq_concat(&cond, gen_code_expr(stmt.condition.data.rel_op_cond.expr2));
+
+	//code_seq_concat(&ret, );
+	code_seq then_block = gen_code_stmts(*stmt.then_stmts);
+	int then_block_size = code_seq_size(then_block);
+	//fprintf(stderr, "	then_block_size: %d\n", then_block_size);
+	code_seq else_block = gen_code_stmts(*stmt.else_stmts);
+	int else_block_size = code_seq_size(else_block);
+	//fprintf(stderr, "	else_block_size: %d\n", then_block_size);
+
+
+	// add condition pointing to then that skips else
+	//fprintf(stderr, "	starting switch: \n", then_block_size);
+	switch (stmt.condition.data.rel_op_cond.rel_op.code)
+	{
+
+		case eqeqsym:
+
+
+			/* // Generate left-hand side and right-hand side code
+			code_seq lhs = gen_code_expr(stmt.condition.data.rel_op_cond.expr1);
+			code_seq rhs = gen_code_expr(stmt.condition.data.rel_op_cond.expr2);
+
+			// Append them to the condition sequence
+			code_seq_concat(&cond, lhs);
+			code_seq_concat(&cond, rhs);
+
+			// Generate a SUB instruction: TMP1 = TMP1 - TMP2
+			code *sub_code = code_sub(TMP1, TMP1, TMP2); // Create SUB code
+			code_seq_add_to_end(&cond, sub_code);
+
+			// Generate a branch-if-not-equal (BNEZ) instruction
+			// Jump to the else block if the result of subtraction is not zero
+			unsigned int then_offset = code_seq_size(gen_code_stmt_seq(stmt.then_part)) + 1; // +1 for jump
+			code *bnez_code = code_bnez(TMP1, then_offset);
+			code_seq_add_to_end(&cond, bnez_code); */
+
+
+			break;
+
+		case leqsym:
+
+			/*
+			code_seq lhs = gen_code_expr(stmt.condition.data.rel_op_cond.expr1);
+			code_seq rhs = gen_code_expr(stmt.condition.data.rel_op_cond.expr2);
+			code_seq_concat(&cond, lhs);
+			code_seq_concat(&cond, rhs);
+
+			// TMP1 = (TMP1 <= TMP2) ? 1 : 0
+			code *sle_code = code_sle(TMP1, TMP1, TMP2);
+			code_seq_add_to_end(&cond, sle_code);
+
+			unsigned int then_offset = code_seq_size(gen_code_stmt_seq(stmt.then_part)) + 1;
+			code *beqz_code = code_beqz(TMP1, then_offset);
+			code_seq_add_to_end(&cond, beqz_code);
+			*/
+
+			break;
+
+		case geqsym:
+
+			break;
+
+		case gtsym:
+
+			break;
+
+		case ltsym:
+
+			//fprintf(stderr, "	less than\n", then_block_size);
+
+			// left minus right stored
+			offset_type o = literal_table_lookup(stmt.condition.data.rel_op_cond.expr1.data.number.text, stmt.condition.data.rel_op_cond.expr1.data.number.value);
+			offset_type o2 = literal_table_lookup(stmt.condition.data.rel_op_cond.expr2.data.number.text, stmt.condition.data.rel_op_cond.expr2.data.number.value);
+
+
+			//fprintf(stderr, "	lookup complete\n");
+			code_seq_concat(&cond, code_seq_singleton(code_sub(SP, o, SP, o2)));
+			code_seq_concat(&cond, code_seq_singleton(code_bltz(SP, o, else_block_size)));
+
+			break;
+
+		case eqsym:
+
+			break;
+
+		case neqsym:
+
+			break;
+
+
+		default:
+			bail_with_error("ERROR: invalid condition in if statement\n");
+			break;
+	}
+
+	// concat condition and else
+	code_seq_concat(&cond, else_block);
+
+	// concat with branch that skips then
+	code_seq_concat(&cond, code_seq_singleton(code_jrel(then_block_size)));
+
+	// concat with then
+	code_seq_concat(&cond, then_block);
+
+	//return
+	code_seq_concat(&ret, cond);
+
 	return ret;
 }
 
@@ -447,10 +568,39 @@ code_seq gen_code_number(number_t expr) {
 	return ret;
 }
 
+
 code_seq gen_code_logical_not_expr(negated_expr_t expr) {
-	fprintf(stderr, "	Function gen_code_logical_not_expr might not be implemented properly\n");
-	code_seq inner_code = gen_code_expr(*expr.expr); // Evaluate inner expression
-	code* not_instruction = code_notr(); // Apply NOT to the top of the stack
-	code_seq_concat(&inner_code, code_seq_singleton(not_instruction));
-	return inner_code;
+	fprintf(stderr, "In gen_code_logical_not_expr");
+	code_seq ret = code_seq_empty();
+
+	// Step 1: Generate code for the inner expression
+	code_seq expr_code = gen_code_expr(*(expr.expr));
+	code_seq_concat(&ret, expr_code);
+
+	// Step 2: Pop the value from the stack into register 3
+	code_seq_add_to_end(&ret, code_lwr(3, SP, 0));                 // Load from [SP + 0] into reg 3
+	code_seq_add_to_end(&ret, code_addi(SP, SP, BYTES_PER_WORD));  // SP = SP + BYTES_PER_WORD
+
+	// Step 3: Perform logical NOT operation
+	// If reg 3 == 0, set reg 3 = 1
+	// Else, set reg 3 = 0
+
+	// Implementing the above logic using available instructions
+	// We'll use code_beq (branch if equal) and code_jrel (jump relative)
+
+	// If reg 3 == 0, branch to set_true label
+	code_seq_add_to_end(&ret, code_beq(3, 0, 2));   // If reg 3 == 0, skip next 2 instructions
+	// Set reg 3 = 0 (since reg 3 was not zero)
+	code_seq_add_to_end(&ret, code_addi(3, 0, 0));  // reg 3 = 0
+	// Jump over setting reg 3 to 1
+	code_seq_add_to_end(&ret, code_jrel(1));        // Jump ahead by 1 instruction
+	// set_true:
+	// Set reg 3 = 1
+	code_seq_add_to_end(&ret, code_addi(3, 0, 1));  // reg 3 = 1
+
+	// Step 4: Push the result back onto the stack
+	code_seq_add_to_end(&ret, code_addi(SP, SP, -BYTES_PER_WORD)); // SP = SP - BYTES_PER_WORD
+	code_seq_add_to_end(&ret, code_swr(3, SP, 0));                 // Store reg 3 into [SP + 0]
+
+	return ret;
 }

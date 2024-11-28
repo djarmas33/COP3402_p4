@@ -118,6 +118,5 @@ int main(int argc, char* argv[])
 	gen_code_initialize();
 	BOFFILE bf = bof_write_open(boffilename);
 	gen_code_program(bf, progast);
-
 	return EXIT_SUCCESS;
 }

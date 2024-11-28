@@ -1,1 +1,1 @@
-vm: machine.c:646: machine_okay: Assertion `GPR[GP] < GPR[SP]' failed.
+vm: machine.c:647: machine_okay: Assertion `GPR[SP] <= GPR[FP]' failed.
